@@ -37,7 +37,7 @@ export default function SearchBar({
             onKeyDown={(e) => {
               if (e.key === "Enter") onSearch();
             }}
-            placeholder="Contoh: coffeeshop murah di Semarang Tengah"
+            placeholder="Contoh: coffeeshop murah di Semarang"
             className="h-[58px] w-full bg-transparent text-[15px] text-[#12291F] placeholder:text-[#12291F]/40 focus:outline-none sm:h-[62px]"
           />
         </div>
