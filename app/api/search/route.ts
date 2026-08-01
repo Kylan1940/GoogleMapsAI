@@ -2,7 +2,6 @@ import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 import { searchPlaces } from "@/app/lib/googlePlaces";
 import dotenv from "dotenv";
-import { error } from "console";
 
 dotenv.config();
 
@@ -16,7 +15,7 @@ export async function POST(request: Request) {
 
     // 1. Gemini memahami prompt
     const response = await ai.models.generateContent({
-      model: "gemini-3.6-flash",
+      model: "gemini-3.5-flash-lite",
       contents: `
 Kamu adalah sistem pencarian tempat.
 
@@ -31,11 +30,17 @@ kembalikan:
   "reason": "Bukan pencarian tempat"
 }
 
-JIka permintaan lokasi TIDAK jelas, kembalikan:
+JIka permintaan lokasi TIDAK jelas seperti "di planet mars" atau "di rumah", kembalikan:
 
 {
   "valid": false,
   "reason": "Lokasi belum jelas"
+}
+
+Jika prompt meminta "sekitar saya" atau "dekat sini", kembalikan:
+{
+  "valid": false,
+  "reason": "Website sementara tidak dapat mengakses lokasi user, silakan sebutkan lokasi secara spesifik"
 }
 
 Jika valid:
@@ -45,9 +50,17 @@ Jika valid:
   "location": true,
   "placeType": "",
   "location": "",
-  "priceLevel": "",
-  "minimumRating": null,
-  "openNow": null,
+  "priceRange": {
+    "startPrice": null,
+    "endPrice": null
+  },
+  "minimumRating": "",
+  "userRatingCount": "",
+  "OpeningHours": "",
+  "googleMapsUri": "",
+  "websiteUri": "",
+  "nationalPhoneNumber": "",
+  "internationalPhoneNumber": "",
   "sortBy": ""
 }
 
@@ -67,15 +80,7 @@ Hanya kirim JSON.
 
     const aiResult = JSON.parse(cleanJson);
 
-    if (!aiResult.valid) {
-      return NextResponse.json(
-        error({
-          error: aiResult.reason,
-        }),
-      );
-    }
-
-    if (!aiResult.location) {
+    if (!aiResult.valid || !aiResult.location) {
       return NextResponse.json(
         {
           error: aiResult.reason,

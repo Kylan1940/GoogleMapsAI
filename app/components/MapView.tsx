@@ -36,7 +36,7 @@ export default function MapView({
 
   const firstPlace = validPlaces[0];
 
-  const center = {
+  const initialCenter = {
     lat: firstPlace.location!.latitude,
     lng: firstPlace.location!.longitude,
   };
@@ -52,25 +52,28 @@ export default function MapView({
     );
   }
 
+  // Key berubah hanya jika hasil pencarian berubah
+  const mapKey = validPlaces
+    .map(
+      (place) =>
+        `${place.location!.latitude},${place.location!.longitude}`
+    )
+    .join("|");
+
   return (
-    <div
-      style={{
-        width: "100%",
-        height: "450px",
-        marginTop: "30px",
-        borderRadius: "16px",
-        overflow: "hidden",
-      }}
-    >
+    <div className="map-container">
       <APIProvider apiKey={apiKey}>
         <Map
-          defaultCenter={center}
+          key={mapKey}
+          defaultCenter={initialCenter}
           defaultZoom={14}
           mapId="DEMO_MAP_ID"
+          gestureHandling="greedy"
+          clickableIcons={false}
         >
           {validPlaces.map((place, index) => (
             <AdvancedMarker
-              key={index}
+              key={`${place.displayName?.text}-${index}`}
               position={{
                 lat: place.location!.latitude,
                 lng: place.location!.longitude,

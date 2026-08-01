@@ -2,6 +2,14 @@
 
 import { useState } from "react";
 import MapView from "@/app/components/MapView";
+import Header from "@/app/components/Header";
+import Hero from "@/app/components/Hero";
+import SearchBar from "@/app/components/SearchBar";
+import EmptyState from "@/app/components/EmptyState";
+import SkeletonList from "@/app/components/SkeletonCard";
+import ErrorAlert from "@/app/components/ErrorAlert";
+import ResultsHeader from "@/app/components/ResultsHeader";
+import PlaceCard from "@/app/components/PlaceCard";
 
 interface Place {
   displayName?: {
@@ -12,7 +20,18 @@ interface Place {
 
   rating?: number;
 
-  priceLevel?: string;
+  priceRange?: {
+    startPrice?: {
+      currencyCode?: string;
+      units?: string;
+      nanos?: number;
+    };
+    endPrice?: {
+      currencyCode?: string;
+      units?: string;
+      nanos?: number;
+    };
+  };
 
   regularOpeningHours?: {
     openNow?: boolean;
@@ -24,32 +43,69 @@ interface Place {
     longitude: number;
   };
 
-}
+  googleMapsUri?: string;
 
-function formatPriceLevel(priceLevel?: string) {
-  switch (priceLevel) {
-    case "PRICE_LEVEL_INEXPENSIVE":
-      return "$";
+  userRatingCount?: number;
 
-    case "PRICE_LEVEL_MODERATE":
-      return "$$";
+  nationalPhoneNumber?: string;
+  internationalPhoneNumber?: string;
 
-    case "PRICE_LEVEL_EXPENSIVE":
-      return "$$$";
+  websiteUri?: string;
 
-    case "PRICE_LEVEL_VERY_EXPENSIVE":
-      return "$$$$";
-
-    default:
-      return "Belum ada info harga";
-  }
 }
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [places, setPlaces] = useState<Place[]>([]);
+  const [sortBy, setSortBy] = useState("relevance");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  function formatPriceRange(priceRange?: {
+    startPrice?: {
+      currencyCode?: string;
+      units?: string;
+      nanos?: number;
+    };
+    endPrice?: {
+      currencyCode?: string;
+      units?: string;
+      nanos?: number;
+    };
+  }) {
+    if (!priceRange) return "Belum ada info harga";
+
+    const start = priceRange.startPrice;
+    const end = priceRange.endPrice;
+
+    const formatAmount = (value?: { currencyCode?: string; units?: string; nanos?: number }) => {
+      if (!value) return null;
+
+      const units = value.units ?? "";
+      const nanos = value.nanos ?? 0;
+      const currencyCode = value.currencyCode;
+
+      const amount = `${units}${nanos ? `.${nanos.toString().padStart(9, "0")}` : ""}`;
+
+      if (currencyCode === "IDR") {
+        return `Rp ${Number(amount).toLocaleString("id-ID")}`;
+      }
+
+      return `${currencyCode} ${Number(amount).toLocaleString("id-ID")}`;
+    };
+
+    const startText = formatAmount(start);
+    const endText = formatAmount(end);
+
+    if (startText && endText) {
+      return `${startText} - ${endText}`;
+    }
+
+    if (startText) return startText;
+    if (endText) return endText;
+
+    return "Belum ada info harga";
+  }
 
   async function handleSearch() {
     if (!prompt.trim()) return;
@@ -91,97 +147,131 @@ export default function Home() {
     setLoading(false);
   }
 
+  const sortedPlaces = [...places].sort(
+  (a, b) => {
+    // Urutan asli Google Places
+    if (sortBy === "relevance") {
+      return 0;
+    }
+
+    // Harga termurah
+    if (sortBy === "price") {
+  const getPriceValue = (
+    priceRange?: Place["priceRange"]
+  ) => {
+    const startPrice =
+      priceRange?.startPrice;
+
+    if (!startPrice) {
+      return Number.MAX_SAFE_INTEGER;
+    }
+
+    const units = Number(
+      startPrice.units ?? 0
+    );
+
+    const nanos =
+      (startPrice.nanos ?? 0) / 1_000_000_000;
+
+    return units + nanos;
+  };
+
+  const priceA = getPriceValue(
+    a.priceRange
+  );
+
+  const priceB = getPriceValue(
+    b.priceRange
+  );
+
+  return priceA - priceB;
+}
+
+    // Rating tertinggi
+    if (sortBy === "rating") {
+      const ratingA = a.rating ?? 0;
+      const ratingB = b.rating ?? 0;
+
+      // Rating beda
+      if (ratingA !== ratingB) {
+        return ratingB - ratingA;
+      }
+
+      // Rating sama:
+      // jumlah ulasan lebih banyak dulu
+      const countA =
+        a.userRatingCount ?? 0;
+
+      const countB =
+        b.userRatingCount ?? 0;
+
+      return countB - countA;
+    }
+
+    return 0;
+  }
+);
+
   return (
-    <main
-      style={{
-        padding: "40px",
-        maxWidth: "800px",
-        margin: "auto",
-      }}
-    >
-      <h1>GoogleMaps AI</h1>
+    <main className="min-h-screen bg-gradient-to-b from-[#F4FADC] via-[#F7FCE8] to-white">
+      <Header />
 
-      <p>Cari tempat dengan bahasa natural</p>
+      <div className="animate-fade-in">
+        <Hero />
 
-      <div
-        style={{
-          display: "flex",
-          gap: "10px",
-        }}
-      >
-        <input
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleSearch();
-            }
-          }}
-          placeholder="Contoh: coffeeshop murah di Semarang Tengah"
-          style={{
-            flex: 1,
-            padding: "10px",
-          }}
+        <SearchBar
+          prompt={prompt}
+          onPromptChange={setPrompt}
+          onSearch={handleSearch}
+          loading={loading}
         />
-
-        <button onClick={handleSearch} disabled={loading}>
-          {loading ? "Searching..." : "Search"}
-        </button>
       </div>
 
-      {error && (
-        <p
-          style={{
-            color: "red",
-          }}
-        >
-          {error}
-        </p>
-      )}
-
-      <div
-        style={{
-          marginTop: "30px",
-        }}
-      >
-        {places.length === 0 && !loading && <p>Belum ada hasil.</p>}
-
-        <MapView places={places} />
-
-        {places.map((place, index) => (
-          <div
-            key={index}
-            style={{
-              border: "1px solid #ddd",
-              padding: "15px",
-              borderRadius: "10px",
-              marginBottom: "15px",
-            }}
-          >
-            <h2>{place.displayName?.text || "Nama tidak tersedia"}</h2>
-
-            <p>📍 {place.formattedAddress || "Alamat tidak tersedia"}</p>
-
-            <p>⭐ {place.rating || "Belum ada rating"}</p>
-
-            <p>
-              💸{" "}
-              {place.priceLevel !== undefined
-                ? place.priceLevel
-                : "Belum ada info harga"}
-            </p>
-
-            <p>
-              🕒{formatPriceLevel(place.priceLevel)}
-              {place.regularOpeningHours?.openNow === true
-                ? "Buka sekarang"
-                : place.regularOpeningHours?.openNow === false
-                  ? "Tutup sekarang"
-                  : "Belum ada info jam buka"}
-            </p>
+      <section className="mx-auto max-w-[1280px] px-5 py-12 md:px-8 md:py-16">
+        {error && (
+          <div className="mb-8">
+            <ErrorAlert message={error} />
           </div>
-        ))}
-      </div>
+        )}
+
+        {loading && (
+          <div className="mb-10">
+            <SkeletonList />
+          </div>
+        )}
+
+        {!loading && places.length === 0 && !error && <EmptyState />}
+
+        {places.length > 0 && (
+          <>
+            <ResultsHeader
+              count={sortedPlaces.length}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+            />
+
+            <div className="mt-8 overflow-hidden rounded-[22px] border border-black/5 shadow-[0_8px_30px_rgba(14,74,52,0.08)]">
+              <p className="border-b border-black/5 bg-white/70 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-[#0E4A34]">
+                Peta Lokasi
+              </p>
+              <div className="h-[350px] md:h-[500px]">
+                <MapView places={sortedPlaces} />
+              </div>
+            </div>
+
+            <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
+              {sortedPlaces.map((place, index) => (
+                <PlaceCard
+                  key={index}
+                  place={place}
+                  index={index}
+                  formattedPrice={formatPriceRange(place.priceRange)}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </section>
     </main>
   );
 }

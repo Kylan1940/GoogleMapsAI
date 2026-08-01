@@ -13,9 +13,8 @@ export async function searchPlaces(query: string) {
       headers: {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": apiKey,
-
         "X-Goog-FieldMask":
-          "places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.regularOpeningHours,places.location",
+          "places.displayName,places.formattedAddress,places.rating,places.priceRange,places.regularOpeningHours,places.location,places.googleMapsUri,places.userRatingCount,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri",
       },
 
       body: JSON.stringify({
