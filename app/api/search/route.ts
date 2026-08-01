@@ -91,18 +91,16 @@ Hanya kirim JSON.
       );
     }
 
-    // 2. Google Places mencari lokasi
     const searchQuery = aiResult.location
       ? `${aiResult.placeType} di ${aiResult.location}`
       : aiResult.placeType;
 
-    console.log("Google Places query:", searchQuery);
+    // console.log("Google Places query:", searchQuery);
 
     const places = await searchPlaces(searchQuery);
 
-    console.log("Jumlah tempat:", places.length);
+    // console.log("Jumlah tempat:", places.length);
 
-    // 3. Kirim hasil ke frontend
     return NextResponse.json({
       filters: aiResult,
       places,

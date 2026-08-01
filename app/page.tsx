@@ -129,9 +129,9 @@ export default function Home() {
 
       const data = await response.json();
 
-      console.log("API Response:", data);
-      console.log("Places Result:", places);
-      console.log("Jumlah tempat:", places.length);
+      // console.log("API Response:", data);
+      // console.log("Places Result:", places);
+      // console.log("Jumlah tempat:", places.length);
 
       if (!response.ok) {
         throw new Error(data.error || "Search gagal");
