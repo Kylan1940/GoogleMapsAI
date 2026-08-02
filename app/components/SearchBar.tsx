@@ -6,7 +6,7 @@ const SUGGESTIONS = [
   "Coffee shop murah",
   "Barbershop terbaik",
   "Restoran terdekat",
-  "Tempat wisata",
+  "Tempat wisata instagramable",
 ];
 
 interface SearchBarProps {
@@ -22,6 +22,7 @@ export default function SearchBar({
   onSearch,
   loading,
 }: SearchBarProps) {
+  
   return (
     <section className="mx-auto max-w-[720px] px-5">
       <div className="flex flex-col gap-3 rounded-[22px] border border-black/5 bg-white/80 p-2.5 shadow-[0_8px_30px_rgba(14,74,52,0.08)] backdrop-blur sm:flex-row sm:items-center">
@@ -43,7 +44,7 @@ export default function SearchBar({
         </div>
 
         <button
-          onClick={onSearch}
+          onClick={() => onSearch()}
           disabled={loading}
           className="flex h-[58px] w-full items-center justify-center gap-2 rounded-2xl bg-[#0E4A34] px-6 text-[15px] font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#123F2B] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 sm:h-[62px] sm:w-auto"
         >

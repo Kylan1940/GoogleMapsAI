@@ -1,9 +1,181 @@
-export async function searchPlaces(query: string) {
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+interface SearchQuery {
+  placeType?: string | null;
+
+  location?: string | null;
+
+  useUserLocation?: boolean;
+
+  priceLevel?: string | null;
+
+  minimumRating?: number | null;
+
+  openNow?: boolean | null;
+
+  sortBy?: string | null;
+}
+
+interface UserLocation {
+  latitude: number;
+
+  longitude: number;
+}
+
+interface SearchPlacesOptions {
+  query: SearchQuery;
+
+  userLocation?: UserLocation | null;
+}
+
+export async function searchPlaces({
+  query,
+  userLocation,
+}: SearchPlacesOptions) {
+  const apiKey =
+    process.env.GOOGLE_MAPS_API_KEY;
 
   if (!apiKey) {
-    throw new Error("GOOGLE_MAPS_API_KEY tidak ditemukan");
+    throw new Error(
+      "GOOGLE_MAPS_API_KEY belum ditemukan."
+    );
   }
+
+  /*
+   * Buat teks pencarian.
+   *
+   * Contoh:
+   * placeType: coffeeshop
+   * location: Semarang Tengah
+   *
+   * Hasil:
+   * coffeeshop di Semarang Tengah
+   */
+
+  let textQuery =
+    query.placeType ||
+    "tempat";
+
+  if (
+    query.location &&
+    !query.useUserLocation
+  ) {
+    textQuery +=
+      ` di ${query.location}`;
+  }
+
+  /*
+   * Request ke Google Places API
+   */
+
+  const requestBody: Record<
+    string,
+    unknown
+  > = {
+    textQuery,
+
+    languageCode: "id",
+
+    maxResultCount: 20,
+  };
+
+  /*
+   * Jika user meminta:
+   * "dekat saya"
+   *
+   * Google Places memakai
+   * koordinat user sebagai bias.
+   */
+
+  if (
+    query.useUserLocation &&
+    userLocation
+  ) {
+    requestBody.locationBias = {
+      circle: {
+        center: {
+          latitude:
+            userLocation.latitude,
+
+          longitude:
+            userLocation.longitude,
+        },
+
+        /*
+         * Radius 5 km.
+         *
+         * Bisa diganti:
+         * 3000 = 3 km
+         * 5000 = 5 km
+         * 10000 = 10 km
+         */
+        radius: 5000,
+      },
+    };
+  }
+
+  /*
+   * Filter rating minimum.
+   */
+
+  if (
+    query.minimumRating
+  ) {
+    requestBody.minRating =
+      query.minimumRating;
+  }
+
+  /*
+   * Filter hanya tempat yang buka.
+   */
+
+  if (
+    query.openNow === true
+  ) {
+    requestBody.openNow = true;
+  }
+
+  /*
+   * Filter harga.
+   *
+   * Google Places memakai:
+   * PRICE_LEVEL_INEXPENSIVE
+   * PRICE_LEVEL_MODERATE
+   * PRICE_LEVEL_EXPENSIVE
+   * PRICE_LEVEL_VERY_EXPENSIVE
+   */
+
+  if (
+    query.priceLevel === "LOW"
+  ) {
+    requestBody.priceLevels = [
+      "PRICE_LEVEL_INEXPENSIVE",
+    ];
+  }
+
+  if (
+    query.priceLevel === "MEDIUM"
+  ) {
+    requestBody.priceLevels = [
+      "PRICE_LEVEL_MODERATE",
+    ];
+  }
+
+  if (
+    query.priceLevel === "HIGH"
+  ) {
+    requestBody.priceLevels = [
+      "PRICE_LEVEL_EXPENSIVE",
+      "PRICE_LEVEL_VERY_EXPENSIVE",
+    ];
+  }
+
+  console.log(
+    "Google Places request:",
+    JSON.stringify(
+      requestBody,
+      null,
+      2
+    )
+  );
 
   const response = await fetch(
     "https://places.googleapis.com/v1/places:searchText",
@@ -11,33 +183,75 @@ export async function searchPlaces(query: string) {
       method: "POST",
 
       headers: {
-        "Content-Type": "application/json",
-        "X-Goog-Api-Key": apiKey,
-        "X-Goog-FieldMask":
-          "places.displayName,places.formattedAddress,places.rating,places.priceRange,places.regularOpeningHours,places.location,places.googleMapsUri,places.userRatingCount,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri",
+        "Content-Type":
+          "application/json",
+
+        "X-Goog-Api-Key":
+          apiKey,
+
+        /*
+         * Field yang dikembalikan
+         * Google Places.
+         */
+        "X-Goog-FieldMask": [
+          "places.displayName",
+
+          "places.formattedAddress",
+
+          "places.rating",
+
+          "places.userRatingCount",
+
+          "places.priceRange",
+
+          "places.regularOpeningHours",
+
+          "places.location",
+
+          "places.googleMapsUri",
+
+          "places.nationalPhoneNumber",
+
+          "places.internationalPhoneNumber",
+
+          "places.websiteUri",
+        ].join(","),
       },
 
-      body: JSON.stringify({
-        textQuery: query,
-        languageCode: "id",
-        regionCode: "ID",
-      }),
+      body: JSON.stringify(
+        requestBody
+      ),
     }
   );
 
-  const data = await response.json();
-
-  console.log(
-    "Google Places response:",
-    JSON.stringify(data, null, 2)
-  );
+  /*
+   * Jika Google Places error,
+   * tampilkan isi error asli.
+   */
 
   if (!response.ok) {
+    const errorText =
+      await response.text();
+
+    console.error(
+      "Google Places error:",
+      errorText
+    );
+
     throw new Error(
-      data.error?.message ||
-      "Google Places gagal"
+      `Google Places gagal: ${errorText}`
     );
   }
 
-  return data.places ?? [];
+  const data =
+    await response.json();
+
+  console.log(
+    "Google Places response:",
+    data
+  );
+
+  return (
+    data.places || []
+  );
 }

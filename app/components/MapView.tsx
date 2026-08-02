@@ -28,9 +28,14 @@ interface Place {
 
 interface MapViewProps {
   places: Place[];
+
+  userLocation: {
+    latitude: number;
+    longitude: number;
+  } | null;
 }
 
-export default function MapView({ places }: MapViewProps) {
+export default function MapView({ places, userLocation }: MapViewProps) {
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
 
   const validPlaces = places.filter(

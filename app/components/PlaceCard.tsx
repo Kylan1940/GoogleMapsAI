@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   MapPin,
+  Navigation,
   Star,
   Banknote,
   Clock,
@@ -50,15 +51,69 @@ interface PlaceCardProps {
   place: Place;
   formattedPrice: string;
   index: number;
+  userLocation: {
+    latitude: number;
+    longitude: number;
+  } | null;
 }
 
-export default function PlaceCard({ place, formattedPrice, index }: PlaceCardProps) {
+export default function PlaceCard({
+  place,
+  formattedPrice,
+  index,
+  userLocation,
+}: PlaceCardProps) {
   const [showHours, setShowHours] = useState(false);
 
   const phone = place.nationalPhoneNumber || place.internationalPhoneNumber;
   const hasHours = !!place.regularOpeningHours?.weekdayDescriptions?.length;
   const openNow = place.regularOpeningHours?.openNow;
   const placeName = place.displayName?.text || "tempat ini";
+
+  const calculateDistance = (
+    latitude1: number,
+    longitude1: number,
+    latitude2: number,
+    longitude2: number,
+  ) => {
+    const earthRadius = 6371;
+
+    const toRadians = (degree: number) => {
+      return (degree * Math.PI) / 180;
+    };
+
+    const latitudeDifference = toRadians(latitude2 - latitude1);
+
+    const longitudeDifference = toRadians(longitude2 - longitude1);
+
+    const a =
+      Math.sin(latitudeDifference / 2) * Math.sin(latitudeDifference / 2) +
+      Math.cos(toRadians(latitude1)) *
+        Math.cos(toRadians(latitude2)) *
+        Math.sin(longitudeDifference / 2) *
+        Math.sin(longitudeDifference / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return earthRadius * c;
+  };
+
+  const distance =
+    userLocation && place.location
+      ? calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          place.location.latitude,
+          place.location.longitude,
+        )
+      : null;
+
+  const formattedDistance =
+    distance !== null
+      ? distance < 1
+        ? `${Math.round(distance * 1000).toLocaleString("id-ID")} m `
+        : `${distance.toFixed(1).replace(".", ",")} km `
+      : null;
 
   return (
     <article
@@ -70,13 +125,36 @@ export default function PlaceCard({ place, formattedPrice, index }: PlaceCardPro
       </h3>
 
       <p className="mt-1.5 flex items-start gap-1.5 text-sm text-[#3F5147]">
-        <MapPin size={16} className="mt-0.5 shrink-0 text-[#0E4A34]/70" aria-hidden="true" />
+        <MapPin
+          size={16}
+          className="mt-0.5 shrink-0 text-[#0E4A34]/70"
+          aria-hidden="true"
+        />
         {place.formattedAddress || "Alamat tidak tersedia"}
       </p>
 
+      <div className="mt-2">
+        {formattedDistance ? (
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-[#C8E85A]/35 px-2.5 py-1 text-xs font-semibold text-[#0E4A34]">
+            <Navigation size={13} aria-hidden="true" />
+            {formattedDistance}
+            dari lokasi Anda
+          </div>
+        ) : (
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-black/[0.04] px-2.5 py-1 text-xs text-[#3F5147]/70">
+            <Navigation size={13} aria-hidden="true" />
+            Izinkan lokasi untuk melihat jarak
+          </div>
+        )}
+      </div>
+
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className="inline-flex items-center gap-1 rounded-full bg-[#12291F] px-2.5 py-1 text-xs font-semibold text-white">
-          <Star size={13} className="fill-[#C8E85A] text-[#C8E85A]" aria-hidden="true" />
+          <Star
+            size={13}
+            className="fill-[#C8E85A] text-[#C8E85A]"
+            aria-hidden="true"
+          />
           {place.rating ? place.rating.toFixed(1) : "Belum ada rating"}
         </span>
         <span className="text-xs text-[#3F5147]">
@@ -88,7 +166,9 @@ export default function PlaceCard({ place, formattedPrice, index }: PlaceCardPro
         {openNow !== undefined && (
           <span
             className={`ml-auto inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
-              openNow ? "bg-[#C8E85A]/40 text-[#0E4A34]" : "bg-black/5 text-[#3F5147]"
+              openNow
+                ? "bg-[#C8E85A]/40 text-[#0E4A34]"
+                : "bg-black/5 text-[#3F5147]"
             }`}
           >
             <span
@@ -103,7 +183,11 @@ export default function PlaceCard({ place, formattedPrice, index }: PlaceCardPro
       </div>
 
       <div className="mt-3 flex items-center gap-1.5 rounded-xl bg-[#F4FADC] px-3 py-2 text-sm font-medium text-[#12291F]">
-        <Banknote size={16} className="shrink-0 text-[#0E4A34]/70" aria-hidden="true" />
+        <Banknote
+          size={16}
+          className="shrink-0 text-[#0E4A34]/70"
+          aria-hidden="true"
+        />
         <span className="font-mono text-[13px]">{formattedPrice}</span>
       </div>
 
@@ -116,7 +200,11 @@ export default function PlaceCard({ place, formattedPrice, index }: PlaceCardPro
             className="flex w-full items-center justify-between gap-2 rounded-xl border border-black/10 px-3 py-2 text-sm font-medium text-[#12291F] transition-colors hover:bg-black/[0.03]"
           >
             <span className="flex items-center gap-1.5">
-              <Clock size={16} className="text-[#0E4A34]/70" aria-hidden="true" />
+              <Clock
+                size={16}
+                className="text-[#0E4A34]/70"
+                aria-hidden="true"
+              />
               Lihat jam lengkap
             </span>
             {showHours ? (
@@ -128,7 +216,9 @@ export default function PlaceCard({ place, formattedPrice, index }: PlaceCardPro
 
           <div
             className={`grid overflow-hidden transition-all duration-300 ease-in-out ${
-              showHours ? "mt-2 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+              showHours
+                ? "mt-2 grid-rows-[1fr] opacity-100"
+                : "grid-rows-[0fr] opacity-0"
             }`}
           >
             <ul className="min-h-0 space-y-1 rounded-xl bg-black/[0.02] px-3 py-2 text-xs text-[#3F5147]">

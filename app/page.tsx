@@ -51,7 +51,6 @@ interface Place {
   internationalPhoneNumber?: string;
 
   websiteUri?: string;
-
 }
 
 export default function Home() {
@@ -60,6 +59,15 @@ export default function Home() {
   const [sortBy, setSortBy] = useState("relevance");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [showLocationPopup, setShowLocationPopup] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [pendingSearch, setPendingSearch] = useState(false);
+  const [locationError, setLocationError] = useState("");
+  const [pendingDistanceSort, setPendingDistanceSort] = useState(false);
 
   function formatPriceRange(priceRange?: {
     startPrice?: {
@@ -78,7 +86,11 @@ export default function Home() {
     const start = priceRange.startPrice;
     const end = priceRange.endPrice;
 
-    const formatAmount = (value?: { currencyCode?: string; units?: string; nanos?: number }) => {
+    const formatAmount = (value?: {
+      currencyCode?: string;
+      units?: string;
+      nanos?: number;
+    }) => {
       if (!value) return null;
 
       const units = value.units ?? "";
@@ -107,7 +119,14 @@ export default function Home() {
     return "Belum ada info harga";
   }
 
-  async function handleSearch() {
+  async function handleSearch(
+    location: {
+      latitude: number;
+      longitude: number;
+    } | null = userLocation,
+  ) {
+    const currentLocation = location ?? userLocation;
+
     if (!prompt.trim()) return;
 
     setLoading(true);
@@ -124,68 +143,186 @@ export default function Home() {
 
         body: JSON.stringify({
           prompt,
+          userLocation: currentLocation,
         }),
       });
 
       const data = await response.json();
 
-      // console.log("API Response:", data);
-      // console.log("Places Result:", places);
-      // console.log("Jumlah tempat:", places.length);
+      // Gemini mendeteksi bahwa prompt
+      // membutuhkan lokasi pengguna
+      if (data.requiresLocation && !currentLocation) {
+        setPendingSearch(true);
+        setShowLocationPopup(true);
+
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(data.error || "Search gagal");
       }
 
       setPlaces(data.places || []);
+
+      // Gemini bisa menentukan sorting
+      // dari prompt, misalnya:
+      // "coffeeshop terdekat"
+      if (data.query?.sortBy) {
+        setSortBy(data.query.sortBy);
+      }
     } catch (err) {
       console.error(err);
 
       setError(err instanceof Error ? err.message : "Terjadi error");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
-  const sortedPlaces = [...places].sort(
-  (a, b) => {
+  function handleAllowLocation() {
+    if (!navigator.geolocation) {
+      setLocationError("Browser ini tidak mendukung fitur lokasi.");
+
+      return;
+    }
+
+    setLocationLoading(true);
+    setLocationError("");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const location = {
+          latitude: position.coords.latitude,
+
+          longitude: position.coords.longitude,
+        };
+
+        setUserLocation(location);
+
+        setLocationLoading(false);
+
+        setShowLocationPopup(false);
+
+        // Jika popup muncul karena
+        // sort "Terdekat dari saya"
+        if (pendingDistanceSort) {
+          setSortBy("distance");
+
+          setPendingDistanceSort(false);
+        }
+
+        // Jika popup muncul karena
+        // Gemini mendeteksi "near me"
+        if (pendingSearch) {
+          setPendingSearch(false);
+
+          handleSearch(location);
+        }
+      },
+
+      (geoError) => {
+        console.error("Geolocation error:", geoError);
+
+        setLocationLoading(false);
+
+        if (geoError.code === geoError.PERMISSION_DENIED) {
+          setLocationError("Izin lokasi ditolak melalui browser.");
+        } else {
+          setLocationError("Lokasi tidak dapat ditemukan.");
+        }
+      },
+
+      {
+        enableHighAccuracy: true,
+
+        timeout: 10000,
+
+        maximumAge: 60000,
+      },
+    );
+  }
+
+  function handleRejectLocation() {
+    setShowLocationPopup(false);
+
+    setPendingSearch(false);
+
+    setPendingDistanceSort(false);
+
+    setLocationError("");
+
+    setError("Fitur ini membutuhkan izin lokasi.");
+  }
+
+  const sortedPlaces = [...places].sort((a, b) => {
     // Urutan asli Google Places
     if (sortBy === "relevance") {
       return 0;
     }
 
-    // Harga termurah
-    if (sortBy === "price") {
-  const getPriceValue = (
-    priceRange?: Place["priceRange"]
-  ) => {
-    const startPrice =
-      priceRange?.startPrice;
+    // Tempat terdekat dari lokasi pengguna
+    if (sortBy === "distance") {
+      if (!userLocation) {
+        return 0;
+      }
 
-    if (!startPrice) {
-      return Number.MAX_SAFE_INTEGER;
+      const calculateDistance = (latitude: number, longitude: number) => {
+        const earthRadius = 6371;
+
+        const toRadians = (value: number) => {
+          return (value * Math.PI) / 180;
+        };
+
+        const latitudeDifference = toRadians(latitude - userLocation.latitude);
+
+        const longitudeDifference = toRadians(
+          longitude - userLocation.longitude,
+        );
+
+        const aValue =
+          Math.sin(latitudeDifference / 2) ** 2 +
+          Math.cos(toRadians(userLocation.latitude)) *
+            Math.cos(toRadians(latitude)) *
+            Math.sin(longitudeDifference / 2) ** 2;
+
+        const c = 2 * Math.atan2(Math.sqrt(aValue), Math.sqrt(1 - aValue));
+
+        return earthRadius * c;
+      };
+
+      const distanceA = a.location
+        ? calculateDistance(a.location.latitude, a.location.longitude)
+        : Number.MAX_SAFE_INTEGER;
+
+      const distanceB = b.location
+        ? calculateDistance(b.location.latitude, b.location.longitude)
+        : Number.MAX_SAFE_INTEGER;
+
+      return distanceA - distanceB;
     }
 
-    const units = Number(
-      startPrice.units ?? 0
-    );
+    // Harga termurah
+    if (sortBy === "price") {
+      const getPriceValue = (priceRange?: Place["priceRange"]) => {
+        const startPrice = priceRange?.startPrice;
 
-    const nanos =
-      (startPrice.nanos ?? 0) / 1_000_000_000;
+        if (!startPrice) {
+          return Number.MAX_SAFE_INTEGER;
+        }
 
-    return units + nanos;
-  };
+        const units = Number(startPrice.units ?? 0);
 
-  const priceA = getPriceValue(
-    a.priceRange
-  );
+        const nanos = (startPrice.nanos ?? 0) / 1_000_000_000;
 
-  const priceB = getPriceValue(
-    b.priceRange
-  );
+        return units + nanos;
+      };
 
-  return priceA - priceB;
-}
+      const priceA = getPriceValue(a.priceRange);
+
+      const priceB = getPriceValue(b.priceRange);
+
+      return priceA - priceB;
+    }
 
     // Rating tertinggi
     if (sortBy === "rating") {
@@ -199,18 +336,20 @@ export default function Home() {
 
       // Rating sama:
       // jumlah ulasan lebih banyak dulu
-      const countA =
-        a.userRatingCount ?? 0;
+      const countA = a.userRatingCount ?? 0;
 
-      const countB =
-        b.userRatingCount ?? 0;
+      const countB = b.userRatingCount ?? 0;
 
       return countB - countA;
     }
 
     return 0;
+  });
+
+  function handleRequestLocationClick() {
+    setLocationError("");
+    setShowLocationPopup(true);
   }
-);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#F4FADC] via-[#F7FCE8] to-white">
@@ -248,6 +387,10 @@ export default function Home() {
               count={sortedPlaces.length}
               sortBy={sortBy}
               onSortChange={setSortBy}
+              userLocation={userLocation}
+              locationLoading={locationLoading}
+              locationError={locationError}
+              onUseLocation={handleRequestLocationClick}
             />
 
             <div className="mt-8 overflow-hidden rounded-[22px] border border-black/5 shadow-[0_8px_30px_rgba(14,74,52,0.08)]">
@@ -255,7 +398,7 @@ export default function Home() {
                 Peta Lokasi
               </p>
               <div className="h-[350px] md:h-[500px]">
-                <MapView places={sortedPlaces} />
+                <MapView places={sortedPlaces} userLocation={userLocation} />
               </div>
             </div>
 
@@ -266,12 +409,61 @@ export default function Home() {
                   place={place}
                   index={index}
                   formattedPrice={formatPriceRange(place.priceRange)}
+                  userLocation={userLocation}
                 />
               ))}
             </div>
           </>
         )}
       </section>
+
+      {showLocationPopup && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 px-5 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-[24px] border border-black/5 bg-white p-7 text-center shadow-2xl">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E8F5D2] text-2xl">
+              📍
+            </div>
+
+            <h2 className="mt-5 text-xl font-bold text-[#123524]">
+              Gunakan lokasi Anda?
+            </h2>
+
+            <p className="mt-3 text-sm leading-6 text-[#607065]">
+              Fitur ini membutuhkan lokasi untuk menemukan tempat di sekitar
+              Anda.
+            </p>
+
+            <p className="mt-2 text-xs leading-5 text-[#4D8A57]">
+              Lokasi hanya digunakan untuk pencarian ini dan tidak disimpan oleh
+              aplikasi.
+            </p>
+
+            {locationError && (
+              <p className="mt-4 text-sm text-red-600">{locationError}</p>
+            )}
+
+            <div className="mt-7 flex gap-3">
+              <button
+                type="button"
+                onClick={handleRejectLocation}
+                disabled={locationLoading}
+                className="flex-1 rounded-xl border border-[#D5DDD2] px-4 py-3 text-sm font-semibold text-[#3D5144] transition hover:bg-[#F4F7F2] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Tolak
+              </button>
+
+              <button
+                type="button"
+                onClick={handleAllowLocation}
+                disabled={locationLoading}
+                className="flex-1 rounded-xl bg-[#0E4A34] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#123E2D] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {locationLoading ? "Mengambil lokasi..." : "Lanjut"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

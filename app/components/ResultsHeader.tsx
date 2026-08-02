@@ -1,21 +1,39 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Check, ArrowDownWideNarrow } from "lucide-react";
+import { ChevronDown, Check, ArrowDownWideNarrow, LocateFixed, Loader2 } from "lucide-react";
 
 const OPTIONS = [
   { value: "relevance", label: "Paling relevan" },
+  { value: "distance", label: "Paling dekat" },
   { value: "price", label: "Paling murah" },
   { value: "rating", label: "Rating tertinggi" },
 ];
+
+interface UserLocation {
+  latitude: number;
+  longitude: number;
+}
 
 interface ResultsHeaderProps {
   count: number;
   sortBy: string;
   onSortChange: (value: string) => void;
+  userLocation: UserLocation | null;
+  locationLoading: boolean;
+  locationError: string;
+  onUseLocation: () => void;
 }
 
-export default function ResultsHeader({ count, sortBy, onSortChange }: ResultsHeaderProps) {
+export default function ResultsHeader({
+  count,
+  sortBy,
+  onSortChange,
+  userLocation,
+  locationLoading,
+  locationError,
+  onUseLocation,
+}: ResultsHeaderProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -39,12 +57,48 @@ export default function ResultsHeader({ count, sortBy, onSortChange }: ResultsHe
   const current = OPTIONS.find((o) => o.value === sortBy) ?? OPTIONS[0];
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
         <h2 className="font-display text-xl font-semibold text-[#12291F] sm:text-2xl">
           Hasil Pencarian
         </h2>
         <p className="mt-1 text-sm text-[#3F5147]">Ditemukan {count} tempat</p>
+
+        <div className="mt-2.5">
+          {userLocation ? (
+            <button
+              type="button"
+              onClick={onUseLocation}
+              disabled={locationLoading}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#0E4A34]/20 bg-[#C8E85A]/25 px-3 py-1.5 text-xs font-semibold text-[#0E4A34] transition-colors duration-200 hover:bg-[#C8E85A]/40 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {locationLoading ? (
+                <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+              ) : (
+                <span className="h-1.5 w-1.5 rounded-full bg-[#0E4A34]" aria-hidden="true" />
+              )}
+              Lokasi aktif · Perbarui
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onUseLocation}
+              disabled={locationLoading}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#0E4A34]/20 bg-white px-3 py-1.5 text-xs font-semibold text-[#0E4A34] shadow-sm transition-colors duration-200 hover:bg-[#0E4A34]/5 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {locationLoading ? (
+                <Loader2 size={13} className="animate-spin" aria-hidden="true" />
+              ) : (
+                <LocateFixed size={13} aria-hidden="true" />
+              )}
+              {locationLoading ? "Mencari lokasi..." : "Gunakan Lokasi"}
+            </button>
+          )}
+
+          {locationError && (
+            <p className="mt-1.5 text-xs text-red-600">{locationError}</p>
+          )}
+        </div>
       </div>
 
       <div ref={containerRef} className="relative w-full sm:w-auto">
