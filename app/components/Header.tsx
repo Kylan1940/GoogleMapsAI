@@ -19,8 +19,8 @@ function GithubIcon({ size = 18 }: { size?: number }) {
 
 export default function Header() {
   return (
-    <header className="sticky top-0 z-50 h-[76px] border-b border-black/10 bg-[#0E4A34] shadow-[0_1px_12px_rgba(0,0,0,0.08)] md:h-[80px]">
-      <div className="mx-auto flex h-full max-w-[1280px] items-center justify-between px-5 md:px-8">
+    <header className="sticky top-0 z-50 h-19 border-b border-black/10 bg-[#0E4A34] shadow-[0_1px_12px_rgba(0,0,0,0.08)] md:h-20">
+      <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-5 md:px-8">
         <Link
           href="/"
           className="group flex items-center gap-2.5 text-white transition-opacity hover:opacity-90"

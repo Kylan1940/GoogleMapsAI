@@ -60,19 +60,18 @@ kembalikan:
 
 {
   "valid": false,
-  "reason": "Bukan pencarian tempat"
+  "reason": "Bukan pencarian tempat. Gunakan kata kunci seperti 'tempat', 'cafe', 'restoran', 'warung', 'toko', 'hotel', 'rumah sakit', 'sekolah', dll."
 }
 
 JIka permintaan lokasi TIDAK jelas seperti "di planet mars" atau "di rumah", kembalikan:
 
 {
   "valid": false,
-  "reason": "Lokasi belum jelas"
+  "reason": "Lokasi belum jelas. Gunakan terdekat, nama kota, kecamatan, kabupaten, provinsi, atau lokasi yang jelas."
 }
 
 Gunakan format:
 
-{
   "valid": boolean,
   "placeType": string | null,
   "location": string | null,
@@ -104,35 +103,24 @@ ATURAN:
 
 - Contoh yang membutuhkan
   lokasi pengguna:
-
   "dekat saya"
-
   "di sekitar saya"
-
   "di sekitar me"
-
   "near me"
-
   "nearby"
-
   "dekat sini"
-
   "sekitar sini"
-
   "yang paling dekat"
 
 - Jika useUserLocation bernilai
   true:
-
   location harus null.
 
 - Jika pengguna menyebut lokasi
   seperti kota, kecamatan,
   kabupaten, atau provinsi:
-
   gunakan lokasi tersebut pada
   field location.
-
   useUserLocation harus false.
 
 - sortBy:

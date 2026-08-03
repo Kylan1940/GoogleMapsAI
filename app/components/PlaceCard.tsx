@@ -141,7 +141,7 @@ export default function PlaceCard({
             dari lokasi Anda
           </div>
         ) : (
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-black/[0.04] px-2.5 py-1 text-xs text-[#3F5147]/70">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-black/4 px-2.5 py-1 text-xs text-[#3F5147]/70">
             <Navigation size={13} aria-hidden="true" />
             Izinkan lokasi untuk melihat jarak
           </div>
@@ -197,7 +197,7 @@ export default function PlaceCard({
             type="button"
             onClick={() => setShowHours((prev) => !prev)}
             aria-expanded={showHours}
-            className="flex w-full items-center justify-between gap-2 rounded-xl border border-black/10 px-3 py-2 text-sm font-medium text-[#12291F] transition-colors hover:bg-black/[0.03]"
+            className="flex w-full items-center justify-between gap-2 rounded-xl border border-black/10 px-3 py-2 text-sm font-medium text-[#12291F] transition-colors hover:bg-black/3"
           >
             <span className="flex items-center gap-1.5">
               <Clock
@@ -221,7 +221,7 @@ export default function PlaceCard({
                 : "grid-rows-[0fr] opacity-0"
             }`}
           >
-            <ul className="min-h-0 space-y-1 rounded-xl bg-black/[0.02] px-3 py-2 text-xs text-[#3F5147]">
+            <ul className="min-h-0 space-y-1 rounded-xl bg-black/2 px-3 py-2 text-xs text-[#3F5147]">
               {place.regularOpeningHours?.weekdayDescriptions?.map((day, i) => (
                 <li key={i}>{day}</li>
               ))}
@@ -240,7 +240,7 @@ export default function PlaceCard({
           <a
             href={`tel:${phone}`}
             aria-label={`Telepon ${placeName}`}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 px-3 py-2 text-xs font-medium text-[#12291F] transition-colors hover:bg-black/[0.03]"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 px-3 py-2 text-xs font-medium text-[#12291F] transition-colors hover:bg-black/3"
           >
             <Phone size={14} aria-hidden="true" />
             {phone}
@@ -258,7 +258,7 @@ export default function PlaceCard({
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`Buka website resmi ${placeName}`}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 px-3 py-2 text-xs font-medium text-[#12291F] transition-colors hover:bg-black/[0.03]"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 px-3 py-2 text-xs font-medium text-[#12291F] transition-colors hover:bg-black/3"
           >
             <Globe size={14} aria-hidden="true" />
             Website

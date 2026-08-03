@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MapView from "@/app/components/MapView";
 import Header from "@/app/components/Header";
 import Hero from "@/app/components/Hero";
@@ -254,6 +254,22 @@ export default function Home() {
     setError("Fitur ini membutuhkan izin lokasi.");
   }
 
+  function handleRequestLocationClick() {
+    setLocationError("");
+    setShowLocationPopup(true);
+  }
+
+  // PENTING: hook harus di top-level komponen,
+  // BUKAN di dalam callback .sort() di bawah.
+  // Efek ini memicu popup lokasi begitu user
+  // memilih sort "distance" tapi lokasi belum ada.
+  useEffect(() => {
+    if (sortBy === "distance" && !userLocation) {
+      setPendingDistanceSort(true);
+      setShowLocationPopup(true);
+    }
+  }, [sortBy, userLocation]);
+
   const sortedPlaces = [...places].sort((a, b) => {
     // Urutan asli Google Places
     if (sortBy === "relevance") {
@@ -262,6 +278,11 @@ export default function Home() {
 
     // Tempat terdekat dari lokasi pengguna
     if (sortBy === "distance") {
+      // Comparator harus murni: TIDAK BOLEH
+      // ada setState di sini. Kalau lokasi
+      // belum ada, cukup return 0 (urutan
+      // asli) — popup-nya sudah ditangani
+      // oleh useEffect di atas.
       if (!userLocation) {
         return 0;
       }
@@ -346,13 +367,8 @@ export default function Home() {
     return 0;
   });
 
-  function handleRequestLocationClick() {
-    setLocationError("");
-    setShowLocationPopup(true);
-  }
-
   return (
-    <main className="min-h-screen bg-gradient-to-b from-[#F4FADC] via-[#F7FCE8] to-white">
+    <main className="min-h-screen bg-linear-to-b from-[#F4FADC] via-[#F7FCE8] to-white">
       <Header />
 
       <div className="animate-fade-in">
@@ -366,7 +382,7 @@ export default function Home() {
         />
       </div>
 
-      <section className="mx-auto max-w-[1280px] px-5 py-12 md:px-8 md:py-16">
+      <section className="mx-auto max-w-7xl px-5 py-12 md:px-8 md:py-16">
         {error && (
           <div className="mb-8">
             <ErrorAlert message={error} />
@@ -397,12 +413,12 @@ export default function Home() {
               <p className="border-b border-black/5 bg-white/70 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-[#0E4A34]">
                 Peta Lokasi
               </p>
-              <div className="h-[350px] md:h-[500px]">
+              <div className="h-87.5 md:h-125">
                 <MapView places={sortedPlaces} userLocation={userLocation} />
               </div>
             </div>
 
-            <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div className="mt-8 grid grid-cols-1 items-start gap-5 md:grid-cols-2">
               {sortedPlaces.map((place, index) => (
                 <PlaceCard
                   key={index}
@@ -418,8 +434,8 @@ export default function Home() {
       </section>
 
       {showLocationPopup && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 px-5 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[24px] border border-black/5 bg-white p-7 text-center shadow-2xl">
+        <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 px-5 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-black/5 bg-white p-7 text-center shadow-2xl">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#E8F5D2] text-2xl">
               📍
             </div>
@@ -429,13 +445,11 @@ export default function Home() {
             </h2>
 
             <p className="mt-3 text-sm leading-6 text-[#607065]">
-              Fitur ini membutuhkan lokasi untuk menemukan tempat di sekitar
-              Anda.
+              Fitur ini membutuhkan lokasi untuk menemukan tempat di sekitar Anda.
             </p>
 
             <p className="mt-2 text-xs leading-5 text-[#4D8A57]">
-              Lokasi hanya digunakan untuk pencarian ini dan tidak disimpan oleh
-              aplikasi.
+              Lokasi hanya digunakan untuk pencarian ini dan tidak disimpan oleh aplikasi.
             </p>
 
             {locationError && (
