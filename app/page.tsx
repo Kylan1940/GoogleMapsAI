@@ -9,6 +9,7 @@ import EmptyState from "@/app/components/EmptyState";
 import SkeletonList from "@/app/components/SkeletonCard";
 import ErrorAlert from "@/app/components/ErrorAlert";
 import ResultsHeader from "@/app/components/ResultsHeader";
+import FilterBar, { PlaceFilters } from "@/app/components/FilterBar";
 import PlaceCard from "@/app/components/PlaceCard";
 
 interface Place {
@@ -68,6 +69,19 @@ export default function Home() {
   const [pendingSearch, setPendingSearch] = useState(false);
   const [locationError, setLocationError] = useState("");
   const [pendingDistanceSort, setPendingDistanceSort] = useState(false);
+  const [filters, setFilters] = useState<PlaceFilters>({
+    openNow: false,
+    hasPhone: false,
+    hasWebsite: false,
+  });
+
+  function toggleFilter(key: keyof PlaceFilters) {
+    setFilters((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  function resetFilters() {
+    setFilters({ openNow: false, hasPhone: false, hasWebsite: false });
+  }
 
   function formatPriceRange(priceRange?: {
     startPrice?: {
@@ -132,6 +146,7 @@ export default function Home() {
     setLoading(true);
     setPlaces([]);
     setError("");
+    setFilters({ openNow: false, hasPhone: false, hasWebsite: false });
 
     try {
       const response = await fetch("/api/search", {
@@ -270,7 +285,26 @@ export default function Home() {
     }
   }, [sortBy, userLocation]);
 
-  const sortedPlaces = [...places].sort((a, b) => {
+  const filteredPlaces = places.filter((place) => {
+    if (filters.openNow && place.regularOpeningHours?.openNow !== true) {
+      return false;
+    }
+
+    if (
+      filters.hasPhone &&
+      !(place.nationalPhoneNumber || place.internationalPhoneNumber)
+    ) {
+      return false;
+    }
+
+    if (filters.hasWebsite && !place.websiteUri) {
+      return false;
+    }
+
+    return true;
+  });
+
+  const sortedPlaces = [...filteredPlaces].sort((a, b) => {
     // Urutan asli Google Places
     if (sortBy === "relevance") {
       return 0;
@@ -400,7 +434,7 @@ export default function Home() {
         {places.length > 0 && (
           <>
             <ResultsHeader
-              count={sortedPlaces.length}
+              count={places.length}
               sortBy={sortBy}
               onSortChange={setSortBy}
               userLocation={userLocation}
@@ -409,26 +443,55 @@ export default function Home() {
               onUseLocation={handleRequestLocationClick}
             />
 
-            <div className="mt-8 overflow-hidden rounded-[22px] border border-black/5 shadow-[0_8px_30px_rgba(14,74,52,0.08)]">
-              <p className="border-b border-black/5 bg-white/70 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-[#0E4A34]">
-                Peta Lokasi
-              </p>
-              <div className="h-87.5 md:h-125">
-                <MapView places={sortedPlaces} userLocation={userLocation} />
-              </div>
-            </div>
+            <FilterBar
+              filters={filters}
+              onToggle={toggleFilter}
+              onReset={resetFilters}
+              resultCount={sortedPlaces.length}
+              totalCount={places.length}
+            />
 
-            <div className="mt-8 grid grid-cols-1 items-start gap-5 md:grid-cols-2">
-              {sortedPlaces.map((place, index) => (
-                <PlaceCard
-                  key={index}
-                  place={place}
-                  index={index}
-                  formattedPrice={formatPriceRange(place.priceRange)}
-                  userLocation={userLocation}
-                />
-              ))}
-            </div>
+            {sortedPlaces.length === 0 ? (
+              <div className="mt-8 flex flex-col items-center justify-center rounded-[22px] border border-dashed border-[#0E4A34]/20 bg-white/50 px-6 py-14 text-center">
+                <p className="font-display text-base font-semibold text-[#12291F]">
+                  Tidak ada tempat yang cocok dengan filter ini
+                </p>
+                <p className="mt-1.5 max-w-85 text-sm text-[#3F5147]">
+                  Coba matikan salah satu filter, atau reset semuanya untuk
+                  melihat kembali seluruh hasil.
+                </p>
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="mt-4 rounded-xl bg-[#0E4A34] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#123F2B]"
+                >
+                  Reset filter
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="mt-8 overflow-hidden rounded-[22px] border border-black/5 shadow-[0_8px_30px_rgba(14,74,52,0.08)]">
+                  <p className="border-b border-black/5 bg-white/70 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-[#0E4A34]">
+                    Peta Lokasi
+                  </p>
+                  <div className="h-87.5 md:h-125">
+                    <MapView places={sortedPlaces} userLocation={userLocation} />
+                  </div>
+                </div>
+
+                <div className="mt-8 grid grid-cols-1 items-start gap-5 md:grid-cols-2">
+                  {sortedPlaces.map((place, index) => (
+                    <PlaceCard
+                      key={index}
+                      place={place}
+                      index={index}
+                      formattedPrice={formatPriceRange(place.priceRange)}
+                      userLocation={userLocation}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </>
         )}
       </section>
@@ -445,11 +508,13 @@ export default function Home() {
             </h2>
 
             <p className="mt-3 text-sm leading-6 text-[#607065]">
-              Fitur ini membutuhkan lokasi untuk menemukan tempat di sekitar Anda.
+              Fitur ini membutuhkan lokasi untuk menemukan tempat di sekitar
+              Anda.
             </p>
 
             <p className="mt-2 text-xs leading-5 text-[#4D8A57]">
-              Lokasi hanya digunakan untuk pencarian ini dan tidak disimpan oleh aplikasi.
+              Lokasi hanya digunakan untuk pencarian ini dan tidak disimpan oleh
+              aplikasi.
             </p>
 
             {locationError && (
