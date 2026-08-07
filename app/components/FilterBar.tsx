@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SlidersHorizontal, Clock, Phone, Globe, Check } from "lucide-react";
+import en from "../messages/en";
+import id from "../messages/id";
 
 export interface PlaceFilters {
   openNow: boolean;
@@ -17,13 +19,8 @@ interface FilterBarProps {
   onReset: () => void;
   resultCount: number;
   totalCount: number;
+  language: "id" | "en";
 }
-
-const FILTER_OPTIONS: { key: FilterKey; label: string; icon: typeof Clock }[] = [
-  { key: "openNow", label: "Buka sekarang", icon: Clock },
-  { key: "hasPhone", label: "Ada nomor telepon", icon: Phone },
-  { key: "hasWebsite", label: "Ada website", icon: Globe },
-];
 
 export default function FilterBar({
   filters,
@@ -31,9 +28,11 @@ export default function FilterBar({
   onReset,
   resultCount,
   totalCount,
+  language,
 }: FilterBarProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const t = language === "id" ? id : en;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -53,6 +52,11 @@ export default function FilterBar({
   }, []);
 
   const activeCount = Object.values(filters).filter(Boolean).length;
+  const FILTER_OPTIONS: { key: FilterKey; label: string; icon: typeof Clock }[] = [
+    { key: "openNow", label: t.openNow, icon: Clock },
+    { key: "hasPhone", label: language === "id" ? "Ada nomor telepon" : "Has phone number", icon: Phone },
+    { key: "hasWebsite", label: language === "id" ? "Ada website" : "Has website", icon: Globe },
+  ];
 
   return (
     <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -69,7 +73,7 @@ export default function FilterBar({
           }`}
         >
           <SlidersHorizontal size={14} aria-hidden="true" />
-          Filter
+          {t.filter}
           {activeCount > 0 && (
             <span
               className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold ${
@@ -123,7 +127,7 @@ export default function FilterBar({
               onClick={onReset}
               className="mt-1 flex w-full items-center justify-center rounded-xl px-3 py-2 text-xs font-semibold text-[#3F5147] transition-colors hover:bg-black/4 hover:text-[#0E4A34]"
             >
-              Reset filter
+              {t.resetFilter}
             </button>
           )}
         </div>
@@ -131,7 +135,7 @@ export default function FilterBar({
 
       {activeCount > 0 && (
         <span className="text-xs text-[#3F5147]">
-          Menampilkan {resultCount} dari {totalCount} tempat
+          {t.showingResults.replace("{resultCount}", String(resultCount)).replace("{totalCount}", String(totalCount))}
         </span>
       )}
     </div>

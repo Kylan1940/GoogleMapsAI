@@ -2,13 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Check, ArrowDownWideNarrow, LocateFixed, Loader2 } from "lucide-react";
-
-const OPTIONS = [
-  { value: "relevance", label: "Paling relevan" },
-  { value: "distance", label: "Paling dekat" },
-  { value: "price", label: "Paling murah" },
-  { value: "rating", label: "Rating tertinggi" },
-];
+import en from "../messages/en";
+import id from "../messages/id";
 
 interface UserLocation {
   latitude: number;
@@ -23,6 +18,7 @@ interface ResultsHeaderProps {
   locationLoading: boolean;
   locationError: string;
   onUseLocation: () => void;
+  language: "id" | "en";
 }
 
 export default function ResultsHeader({
@@ -33,9 +29,11 @@ export default function ResultsHeader({
   locationLoading,
   locationError,
   onUseLocation,
+  language,
 }: ResultsHeaderProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const t = language === "id" ? id : en;
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -54,15 +52,17 @@ export default function ResultsHeader({
     };
   }, []);
 
-  const current = OPTIONS.find((o) => o.value === sortBy) ?? OPTIONS[0];
+  const current = t.sortOptions.find((o) => o.value === sortBy) ?? t.sortOptions[0];
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
         <h2 className="font-display text-xl font-semibold text-[#12291F] sm:text-2xl">
-          Hasil Pencarian
+          {t.resultsHeading}
         </h2>
-        <p className="mt-1 text-sm text-[#3F5147]">Ditemukan {count} tempat</p>
+        <p className="mt-1 text-sm text-[#3F5147]">
+          {t.resultsCount.replace("{count}", String(count))}
+        </p>
 
         <div className="mt-2.5">
           {userLocation ? (
@@ -77,7 +77,7 @@ export default function ResultsHeader({
               ) : (
                 <span className="h-1.5 w-1.5 rounded-full bg-[#0E4A34]" aria-hidden="true" />
               )}
-              Lokasi aktif · Perbarui
+              {t.locationActive}
             </button>
           ) : (
             <button
@@ -91,7 +91,7 @@ export default function ResultsHeader({
               ) : (
                 <LocateFixed size={13} aria-hidden="true" />
               )}
-              {locationLoading ? "Mencari lokasi..." : "Gunakan Lokasi"}
+              {locationLoading ? t.findingLocation : t.useLocation}
             </button>
           )}
 
@@ -106,7 +106,7 @@ export default function ResultsHeader({
           type="button"
           aria-haspopup="listbox"
           aria-expanded={open}
-          aria-label={`Urutkan berdasarkan, saat ini: ${current.label}`}
+          aria-label={`${t.sortLabel}: ${current.label}`}
           onClick={() => setOpen((prev) => !prev)}
           className={`flex w-full items-center gap-2.5 rounded-2xl border bg-white px-4 py-2.5 text-sm font-semibold text-[#12291F] shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#0E4A34]/40 sm:w-56 ${
             open
@@ -119,7 +119,7 @@ export default function ResultsHeader({
           </span>
           <span className="flex-1 text-left">
             <span className="block text-[10px] font-medium uppercase tracking-wide text-[#3F5147]/70">
-              Urutkan
+              {t.sortLabel}
             </span>
             <span className="block leading-tight">{current.label}</span>
           </span>
@@ -140,7 +140,7 @@ export default function ResultsHeader({
               : "pointer-events-none -translate-y-1 scale-95 opacity-0"
           }`}
         >
-          {OPTIONS.map((option) => {
+          {t.sortOptions.map((option) => {
             const isSelected = option.value === sortBy;
             return (
               <li key={option.value} role="option" aria-selected={isSelected}>
@@ -153,7 +153,7 @@ export default function ResultsHeader({
                   className={`flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition-colors duration-150 ${
                     isSelected
                       ? "bg-[#C8E85A]/35 font-semibold text-[#0E4A34]"
-                      : "text-[#3F5147] hover:bg-black/[0.04]"
+                      : "text-[#3F5147] hover:bg-black/4"
                   }`}
                 >
                   {option.label}

@@ -11,6 +11,8 @@ import ErrorAlert from "@/app/components/ErrorAlert";
 import ResultsHeader from "@/app/components/ResultsHeader";
 import FilterBar, { PlaceFilters } from "@/app/components/FilterBar";
 import PlaceCard from "@/app/components/PlaceCard";
+import en from "./messages/en";
+import id from "./messages/id";
 
 interface Place {
   displayName?: {
@@ -74,6 +76,10 @@ export default function Home() {
     hasPhone: false,
     hasWebsite: false,
   });
+  const [language, setLanguage] = useState<"id" | "en">("en");
+  const t = language === "id"
+    ? id
+    : en;
 
   function toggleFilter(key: keyof PlaceFilters) {
     setFilters((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -95,7 +101,7 @@ export default function Home() {
       nanos?: number;
     };
   }) {
-    if (!priceRange) return "Belum ada info harga";
+    if (!priceRange) return t.noPriceInfo;
 
     const start = priceRange.startPrice;
     const end = priceRange.endPrice;
@@ -130,7 +136,7 @@ export default function Home() {
     if (startText) return startText;
     if (endText) return endText;
 
-    return "Belum ada info harga";
+    return t.noPriceInfo;
   }
 
   async function handleSearch(
@@ -159,6 +165,7 @@ export default function Home() {
         body: JSON.stringify({
           prompt,
           userLocation: currentLocation,
+          language,
         }),
       });
 
@@ -174,7 +181,7 @@ export default function Home() {
       }
 
       if (!response.ok) {
-        throw new Error(data.error || "Search gagal");
+        throw new Error(data.error || t.searchFailed);
       }
 
       setPlaces(data.places || []);
@@ -188,7 +195,7 @@ export default function Home() {
     } catch (err) {
       console.error(err);
 
-      setError(err instanceof Error ? err.message : "Terjadi error");
+      setError(err instanceof Error ? err.message : t.genericError);
     } finally {
       setLoading(false);
     }
@@ -196,7 +203,7 @@ export default function Home() {
 
   function handleAllowLocation() {
     if (!navigator.geolocation) {
-      setLocationError("Browser ini tidak mendukung fitur lokasi.");
+      setLocationError(t.browserLocationUnsupported);
 
       return;
     }
@@ -241,9 +248,9 @@ export default function Home() {
         setLocationLoading(false);
 
         if (geoError.code === geoError.PERMISSION_DENIED) {
-          setLocationError("Izin lokasi ditolak melalui browser.");
+          setLocationError(t.locationPermissionDenied);
         } else {
-          setLocationError("Lokasi tidak dapat ditemukan.");
+          setLocationError(t.locationNotFound);
         }
       },
 
@@ -266,7 +273,7 @@ export default function Home() {
 
     setLocationError("");
 
-    setError("Fitur ini membutuhkan izin lokasi.");
+    setError(t.locationPermissionRequired);
   }
 
   function handleRequestLocationClick() {
@@ -402,24 +409,26 @@ export default function Home() {
   });
 
   return (
+    
     <main className="min-h-screen bg-linear-to-b from-[#F4FADC] via-[#F7FCE8] to-white">
-      <Header />
+      <Header language={language} onLanguageChange={setLanguage} />
 
       <div className="animate-fade-in">
-        <Hero />
+        <Hero language={language} />
 
         <SearchBar
           prompt={prompt}
           onPromptChange={setPrompt}
           onSearch={handleSearch}
           loading={loading}
+          language={language}
         />
       </div>
 
       <section className="mx-auto max-w-7xl px-5 py-12 md:px-8 md:py-16">
         {error && (
           <div className="mb-8">
-            <ErrorAlert message={error} />
+            <ErrorAlert message={error} language={language} />
           </div>
         )}
 
@@ -429,7 +438,7 @@ export default function Home() {
           </div>
         )}
 
-        {!loading && places.length === 0 && !error && <EmptyState />}
+        {!loading && places.length === 0 && !error && <EmptyState language={language} />}
 
         {places.length > 0 && (
           <>
@@ -441,6 +450,7 @@ export default function Home() {
               locationLoading={locationLoading}
               locationError={locationError}
               onUseLocation={handleRequestLocationClick}
+              language={language}
             />
 
             <FilterBar
@@ -449,33 +459,36 @@ export default function Home() {
               onReset={resetFilters}
               resultCount={sortedPlaces.length}
               totalCount={places.length}
+              language={language}
             />
 
             {sortedPlaces.length === 0 ? (
               <div className="mt-8 flex flex-col items-center justify-center rounded-[22px] border border-dashed border-[#0E4A34]/20 bg-white/50 px-6 py-14 text-center">
                 <p className="font-display text-base font-semibold text-[#12291F]">
-                  Tidak ada tempat yang cocok dengan filter ini
+                  {t.noResultsTitle}
                 </p>
                 <p className="mt-1.5 max-w-85 text-sm text-[#3F5147]">
-                  Coba matikan salah satu filter, atau reset semuanya untuk
-                  melihat kembali seluruh hasil.
+                  {t.noResultsDescription}
                 </p>
                 <button
                   type="button"
                   onClick={resetFilters}
                   className="mt-4 rounded-xl bg-[#0E4A34] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#123F2B]"
                 >
-                  Reset filter
+                  {t.resetFilter}
                 </button>
               </div>
             ) : (
               <>
                 <div className="mt-8 overflow-hidden rounded-[22px] border border-black/5 shadow-[0_8px_30px_rgba(14,74,52,0.08)]">
                   <p className="border-b border-black/5 bg-white/70 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-[#0E4A34]">
-                    Peta Lokasi
+                    {t.mapLocation}
                   </p>
                   <div className="h-87.5 md:h-125">
-                    <MapView places={sortedPlaces} userLocation={userLocation} />
+                    <MapView
+                      places={sortedPlaces}
+                      userLocation={userLocation}
+                    />
                   </div>
                 </div>
 
@@ -487,6 +500,7 @@ export default function Home() {
                       index={index}
                       formattedPrice={formatPriceRange(place.priceRange)}
                       userLocation={userLocation}
+                      language={language}
                     />
                   ))}
                 </div>
@@ -504,17 +518,15 @@ export default function Home() {
             </div>
 
             <h2 className="mt-5 text-xl font-bold text-[#123524]">
-              Gunakan lokasi Anda?
+              {t.locationPopupTitle}
             </h2>
 
             <p className="mt-3 text-sm leading-6 text-[#607065]">
-              Fitur ini membutuhkan lokasi untuk menemukan tempat di sekitar
-              Anda.
+              {t.locationPopupDescription}
             </p>
 
             <p className="mt-2 text-xs leading-5 text-[#4D8A57]">
-              Lokasi hanya digunakan untuk pencarian ini dan tidak disimpan oleh
-              aplikasi.
+              {t.locationPopupNotice}
             </p>
 
             {locationError && (
@@ -528,7 +540,7 @@ export default function Home() {
                 disabled={locationLoading}
                 className="flex-1 rounded-xl border border-[#D5DDD2] px-4 py-3 text-sm font-semibold text-[#3D5144] transition hover:bg-[#F4F7F2] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Tolak
+                {t.reject}
               </button>
 
               <button
@@ -537,7 +549,7 @@ export default function Home() {
                 disabled={locationLoading}
                 className="flex-1 rounded-xl bg-[#0E4A34] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#123E2D] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {locationLoading ? "Mengambil lokasi..." : "Lanjut"}
+                {locationLoading ? t.loadingLocation : t.continue}
               </button>
             </div>
           </div>

@@ -13,6 +13,8 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import en from "../messages/en";
+import id from "../messages/id";
 
 interface Place {
   displayName?: {
@@ -55,6 +57,7 @@ interface PlaceCardProps {
     latitude: number;
     longitude: number;
   } | null;
+  language: "id" | "en";
 }
 
 export default function PlaceCard({
@@ -62,13 +65,15 @@ export default function PlaceCard({
   formattedPrice,
   index,
   userLocation,
+  language,
 }: PlaceCardProps) {
   const [showHours, setShowHours] = useState(false);
+  const t = language === "id" ? id : en;
 
   const phone = place.nationalPhoneNumber || place.internationalPhoneNumber;
   const hasHours = !!place.regularOpeningHours?.weekdayDescriptions?.length;
   const openNow = place.regularOpeningHours?.openNow;
-  const placeName = place.displayName?.text || "tempat ini";
+  const placeName = place.displayName?.text || (language === "id" ? "tempat ini" : "this place");
 
   const calculateDistance = (
     latitude1: number,
@@ -121,7 +126,7 @@ export default function PlaceCard({
       className="animate-fade-up group h-fit self-start rounded-[20px] border border-black/5 bg-white p-5 shadow-[0_2px_10px_rgba(18,41,31,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_36px_rgba(18,41,31,0.12)]"
     >
       <h3 className="font-display text-lg font-semibold leading-snug text-[#12291F]">
-        {place.displayName?.text || "Nama tidak tersedia"}
+        {place.displayName?.text || t.noName}
       </h3>
 
       <p className="mt-1.5 flex items-start gap-1.5 text-sm text-[#3F5147]">
@@ -130,7 +135,7 @@ export default function PlaceCard({
           className="mt-0.5 shrink-0 text-[#0E4A34]/70"
           aria-hidden="true"
         />
-        {place.formattedAddress || "Alamat tidak tersedia"}
+        {place.formattedAddress || t.noAddress}
       </p>
 
       <div className="mt-2">
@@ -138,12 +143,12 @@ export default function PlaceCard({
           <div className="inline-flex items-center gap-1.5 rounded-full bg-[#C8E85A]/35 px-2.5 py-1 text-xs font-semibold text-[#0E4A34]">
             <Navigation size={13} aria-hidden="true" />
             {formattedDistance}
-            dari lokasi Anda
+            {t.distanceFromYou}
           </div>
         ) : (
           <div className="inline-flex items-center gap-1.5 rounded-full bg-black/4 px-2.5 py-1 text-xs text-[#3F5147]/70">
             <Navigation size={13} aria-hidden="true" />
-            Izinkan lokasi untuk melihat jarak
+            {t.allowLocationToSeeDistance}
           </div>
         )}
       </div>
@@ -155,12 +160,12 @@ export default function PlaceCard({
             className="fill-[#C8E85A] text-[#C8E85A]"
             aria-hidden="true"
           />
-          {place.rating ? place.rating.toFixed(1) : "Belum ada rating"}
+          {place.rating ? place.rating.toFixed(1) : t.noRating}
         </span>
         <span className="text-xs text-[#3F5147]">
           {place.userRatingCount
-            ? `${place.userRatingCount.toLocaleString("id-ID")} ulasan`
-            : "Belum ada ulasan"}
+            ? `${place.userRatingCount.toLocaleString("id-ID")} ${language === "id" ? "ulasan" : "reviews"}`
+            : t.noReviews}
         </span>
 
         {openNow !== undefined && (
@@ -177,7 +182,7 @@ export default function PlaceCard({
               }`}
               aria-hidden="true"
             />
-            {openNow ? "Buka sekarang" : "Tutup sekarang"}
+            {openNow ? t.openNow : t.closedNow}
           </span>
         )}
       </div>
@@ -205,7 +210,7 @@ export default function PlaceCard({
                 className="text-[#0E4A34]/70"
                 aria-hidden="true"
               />
-              Lihat jam lengkap
+              {t.fullHours}
             </span>
             {showHours ? (
               <ChevronUp size={16} aria-hidden="true" />
@@ -231,7 +236,7 @@ export default function PlaceCard({
       ) : (
         <p className="mt-3 flex items-center gap-1.5 text-xs text-[#3F5147]">
           <Clock size={14} className="text-[#0E4A34]/60" aria-hidden="true" />
-          Belum ada info jam buka
+          {t.noHours}
         </p>
       )}
 
@@ -239,7 +244,7 @@ export default function PlaceCard({
         {phone ? (
           <a
             href={`tel:${phone}`}
-            aria-label={`Telepon ${placeName}`}
+            aria-label={`${language === "id" ? "Telepon" : "Call"} ${placeName}`}
             className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 px-3 py-2 text-xs font-medium text-[#12291F] transition-colors hover:bg-black/3"
           >
             <Phone size={14} aria-hidden="true" />
@@ -248,7 +253,7 @@ export default function PlaceCard({
         ) : (
           <span className="inline-flex items-center gap-1.5 rounded-xl border border-black/5 px-3 py-2 text-xs text-[#3F5147]/60">
             <Phone size={14} aria-hidden="true" />
-            Belum ada nomor telepon
+            {t.noPhone}
           </span>
         )}
 
@@ -257,16 +262,16 @@ export default function PlaceCard({
             href={place.websiteUri}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`Buka website resmi ${placeName}`}
+            aria-label={`${language === "id" ? "Buka website resmi" : "Open official website"} ${placeName}`}
             className="inline-flex items-center gap-1.5 rounded-xl border border-black/10 px-3 py-2 text-xs font-medium text-[#12291F] transition-colors hover:bg-black/3"
           >
             <Globe size={14} aria-hidden="true" />
-            Website
+            {t.website}
           </a>
         ) : (
           <span className="inline-flex items-center gap-1.5 rounded-xl border border-black/5 px-3 py-2 text-xs text-[#3F5147]/60">
             <Globe size={14} aria-hidden="true" />
-            Belum ada website resmi
+            {t.noWebsite}
           </span>
         )}
 
@@ -275,11 +280,11 @@ export default function PlaceCard({
             href={place.googleMapsUri}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`Buka ${placeName} di Google Maps`}
+            aria-label={`${language === "id" ? "Buka" : "Open"} ${placeName} ${language === "id" ? "di Google Maps" : "in Google Maps"}`}
             className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-[#0E4A34] px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#123F2B]"
           >
             <Map size={14} aria-hidden="true" />
-            Buka di Maps
+            {t.openInMaps}
           </a>
         )}
       </div>

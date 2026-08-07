@@ -6,7 +6,7 @@
 >- Places API (new)
 >- Maps Javascript API
 
-# Suuport
+# Suport
 [Donate on Ko-Fi](https://ko-fi.com/Kylan1940)
 
 # LICENSE

@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { MapPin } from "lucide-react";
 
+interface HeaderProps {
+  language: "id" | "en";
+  onLanguageChange: (lang: "id" | "en") => void;
+}
+
 function GithubIcon({ size = 18 }: { size?: number }) {
   return (
     <svg
@@ -17,7 +22,7 @@ function GithubIcon({ size = 18 }: { size?: number }) {
   );
 }
 
-export default function Header() {
+export default function Header({ language, onLanguageChange }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 h-19 border-b border-black/10 bg-[#0E4A34] shadow-[0_1px_12px_rgba(0,0,0,0.08)] md:h-20">
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-5 md:px-8">
@@ -33,16 +38,38 @@ export default function Header() {
           </span>
         </Link>
 
-        <a
-          href="https://github.com/Kylan1940"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Kunjungi profil GitHub saya"
-          className="group flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-2 text-white transition-colors duration-200 hover:border-white/25 hover:bg-white/10"
-        >
-          <GithubIcon size={18} />
-          <span className="hidden text-sm font-medium sm:inline">@Kylan1940</span>
-        </a>
+        <div className="flex items-center gap-3">
+          
+          <div className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1">
+            <button
+              onClick={() => onLanguageChange("id")}
+              className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                language === "id" ? "bg-white" : "hover:bg-white/10"
+              }`}
+            >
+              <span className="fi fi-id rounded-sm"></span>
+            </button>
+
+            <button
+              onClick={() => onLanguageChange("en")}
+              className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                language === "en" ? "bg-white" : "hover:bg-white/10"
+              }`}
+            >
+              <span className="fi fi-us rounded-sm"></span>
+            </button>
+          </div>
+
+          <a
+            href="https://github.com/Kylan1940"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-2 text-white transition hover:border-white/30 hover:bg-white/10"
+          >
+            <GithubIcon size={18} />
+            <span className="hidden sm:block font-medium">@Kylan1940</span>
+          </a>
+        </div>
       </div>
     </header>
   );

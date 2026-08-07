@@ -6,14 +6,64 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
+function getLocalizedMessage(language: string | undefined, key: "invalidPrompt" | "notPlaceSearch" | "unclearLocation" | "locationUnknown" | "serverError" | "geminiNoResponse") {
+  const isEnglish = language === "en";
+
+  const messages = {
+    id: {
+      invalidPrompt: "Prompt tidak valid.",
+      notPlaceSearch: "Bukan pencarian tempat. Gunakan kata kunci seperti 'tempat', 'cafe', 'restoran', 'warung', 'toko', 'hotel', 'rumah sakit', 'sekolah', dll.",
+      unclearLocation: "Lokasi belum jelas. Gunakan terdekat, nama kota, kecamatan, kabupaten, provinsi, atau lokasi yang jelas.",
+      locationUnknown: "Lokasi tidak dikenali.",
+      serverError: "Terjadi kesalahan pada server.",
+      geminiNoResponse: "Gemini tidak mengembalikan respons.",
+    },
+    en: {
+      invalidPrompt: "Invalid prompt.",
+      notPlaceSearch: "This is not a place search. Use keywords such as 'place', 'cafe', 'restaurant', 'market', 'shop', 'hotel', 'hospital', 'school', etc.",
+      unclearLocation: "The location is unclear. Use the nearest area, city, district, regency, province, or a clearer location.",
+      locationUnknown: "Location not recognized.",
+      serverError: "A server error occurred.",
+      geminiNoResponse: "Gemini did not return a response.",
+    },
+  } as const;
+
+  return messages[isEnglish ? "en" : "id"][key];
+}
+
+function getLocalizedReason(reason: string | undefined, language: string | undefined) {
+  const isEnglish = language === "en";
+
+  if (reason?.includes("Bukan pencarian tempat") || reason?.includes("This is not a place search")) {
+    return getLocalizedMessage(language, "notPlaceSearch");
+  }
+
+  if (reason?.includes("Lokasi belum jelas") || reason?.includes("The location is unclear")) {
+    return getLocalizedMessage(language, "unclearLocation");
+  }
+
+  if (reason?.includes("Lokasi tidak dikenali") || reason?.includes("Location not recognized")) {
+    return getLocalizedMessage(language, "locationUnknown");
+  }
+
+  if (reason) {
+    return reason;
+  }
+
+  return getLocalizedMessage(language, "locationUnknown");
+}
+
 export async function POST(request: Request) {
+  let selectedLanguage: string | undefined;
+
   try {
     /*
      * Ambil prompt dan koordinat
      * dari page.tsx.
      */
 
-    const { prompt, userLocation } = await request.json();
+    const { prompt, userLocation, language } = await request.json();
+    selectedLanguage = typeof language === "string" ? language : undefined;
 
     //console.log("PROMPT:", prompt);
     //console.log("USER LOCATION:", userLocation);
@@ -25,7 +75,7 @@ export async function POST(request: Request) {
     if (!prompt || typeof prompt !== "string") {
       return Response.json(
         {
-          error: "Prompt tidak valid.",
+          error: getLocalizedMessage(selectedLanguage, "invalidPrompt"),
         },
 
         {
@@ -151,7 +201,7 @@ PROMPT USER:
     const responseText = geminiResponse.text;
 
     if (!responseText) {
-      throw new Error("Gemini tidak mengembalikan respons.");
+      throw new Error(getLocalizedMessage(selectedLanguage, "geminiNoResponse"));
     }
 
     /*
@@ -175,7 +225,7 @@ PROMPT USER:
     if (!aiResult.valid || (!aiResult.location && !aiResult.useUserLocation)) {
       return Response.json(
         {
-          error: aiResult.reason || "Lokasi tidak dikenali.",
+          error: getLocalizedReason(aiResult.reason, selectedLanguage),
         },
         {
           status: 400,
@@ -238,7 +288,7 @@ PROMPT USER:
         error:
           error instanceof Error
             ? error.message
-            : "Terjadi kesalahan pada server.",
+            : getLocalizedMessage(selectedLanguage, "serverError"),
       },
 
       {
