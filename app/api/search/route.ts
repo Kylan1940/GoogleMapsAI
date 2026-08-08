@@ -265,6 +265,7 @@ PROMPT USER:
       query: aiResult,
 
       userLocation: userLocation || null,
+      language: selectedLanguage as "id" | "en",
     });
 
     //console.log("JUMLAH TEMPAT:", places.length);

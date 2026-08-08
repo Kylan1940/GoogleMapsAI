@@ -36,6 +36,7 @@ export default {
   noResultsDescription: "Try turning off one filter, or reset them all to see the full results again.",
   mapLocation: "Location Map",
   noPriceInfo: "No price information yet",
+  mapsApiKeyMissing: "Google Maps API key not found.",
   searchFailed: "Search failed",
   genericError: "An error occurred",
   browserLocationUnsupported: "This browser does not support location features.",

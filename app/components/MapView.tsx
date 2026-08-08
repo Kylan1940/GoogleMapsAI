@@ -8,6 +8,8 @@ import {
 } from "@vis.gl/react-google-maps";
 
 import { useState } from "react";
+import en from "../messages/en";
+import id from "../messages/id";
 
 interface Place {
   displayName?: {
@@ -33,9 +35,12 @@ interface MapViewProps {
     latitude: number;
     longitude: number;
   } | null;
+  language: "id" | "en";
 }
 
-export default function MapView({ places, userLocation }: MapViewProps) {
+export default function MapView({ places, userLocation, language }: MapViewProps) {
+  const t = language === "id" ? id : en;
+
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
 
   const validPlaces = places.filter(
@@ -58,7 +63,7 @@ export default function MapView({ places, userLocation }: MapViewProps) {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   if (!apiKey) {
-    return <p>Google Maps API key belum ditemukan.</p>;
+    return <p>{t.mapsApiKeyMissing}</p>;
   }
 
   // Key berubah hanya jika hasil pencarian berubah
@@ -77,14 +82,14 @@ export default function MapView({ places, userLocation }: MapViewProps) {
           gestureHandling="greedy"
           clickableIcons={false}
         >
-          {validPlaces.map((place, index) => (
+              {validPlaces.map((place, index) => (
             <AdvancedMarker
               key={`${place.displayName?.text}-${index}`}
               position={{
                 lat: place.location!.latitude,
                 lng: place.location!.longitude,
               }}
-              title={place.displayName?.text ?? "Lokasi"}
+              title={place.displayName?.text ?? t.mapLocation}
               clickable
               onClick={() => {
                 setSelectedPlace(place);
@@ -103,14 +108,14 @@ export default function MapView({ places, userLocation }: MapViewProps) {
               }}
             >
               <div className="map-info-window">
-                <h3>
-                  {selectedPlace.displayName?.text ?? "Nama tidak tersedia"}
-                </h3>
-
-                <p>⭐ {selectedPlace.rating ?? "Belum ada rating"}</p>
+                <h3>{selectedPlace.displayName?.text ?? t.noName}</h3>
 
                 <p>
-                  📍 {selectedPlace.formattedAddress ?? "Alamat tidak tersedia"}
+                  ⭐ {selectedPlace.rating ?? t.noRating}
+                </p>
+
+                <p>
+                  📍 {selectedPlace.formattedAddress ?? t.noAddress}
                 </p>
 
                 {selectedPlace.googleMapsUri && (
@@ -119,7 +124,7 @@ export default function MapView({ places, userLocation }: MapViewProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Buka di Google Maps
+                    {t.openInMaps}
                   </a>
                 )}
               </div>

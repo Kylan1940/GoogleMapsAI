@@ -488,6 +488,7 @@ export default function Home() {
                     <MapView
                       places={sortedPlaces}
                       userLocation={userLocation}
+                      language={language}
                     />
                   </div>
                 </div>

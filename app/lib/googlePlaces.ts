@@ -26,10 +26,15 @@ interface SearchPlacesOptions {
   userLocation?: UserLocation | null;
 }
 
+interface SearchPlacesOptionsExtended extends SearchPlacesOptions {
+  language?: "id" | "en";
+}
+
 export async function searchPlaces({
   query,
   userLocation,
-}: SearchPlacesOptions) {
+  language,
+}: SearchPlacesOptionsExtended) {
   const apiKey =
     process.env.GOOGLE_MAPS_API_KEY;
 
@@ -66,13 +71,10 @@ export async function searchPlaces({
    * Request ke Google Places API
    */
 
-  const requestBody: Record<
-    string,
-    unknown
-  > = {
+  const requestBody: Record<string, unknown> = {
     textQuery,
 
-    languageCode: "id",
+    languageCode: language === "en" ? "en" : "id",
 
     maxResultCount: 20,
   };

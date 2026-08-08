@@ -36,6 +36,7 @@ export default {
   noResultsDescription: "Coba matikan salah satu filter, atau reset semuanya untuk melihat kembali seluruh hasil.",
   mapLocation: "Peta Lokasi",
   noPriceInfo: "Belum ada info harga",
+  mapsApiKeyMissing: "Google Maps API key belum ditemukan.",
   searchFailed: "Search gagal",
   genericError: "Terjadi error",
   browserLocationUnsupported: "Browser ini tidak mendukung fitur lokasi.",
