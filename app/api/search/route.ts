@@ -57,20 +57,12 @@ export async function POST(request: Request) {
   let selectedLanguage: string | undefined;
 
   try {
-    /*
-     * Ambil prompt dan koordinat
-     * dari page.tsx.
-     */
 
     const { prompt, userLocation, language } = await request.json();
     selectedLanguage = typeof language === "string" ? language : undefined;
 
     //console.log("PROMPT:", prompt);
     //console.log("USER LOCATION:", userLocation);
-
-    /*
-     * Validasi prompt.
-     */
 
     if (!prompt || typeof prompt !== "string") {
       return Response.json(
@@ -83,11 +75,6 @@ export async function POST(request: Request) {
         },
       );
     }
-
-    /*
-     * Gemini mengubah bahasa
-     * manusia menjadi JSON.
-     */
 
     const geminiResponse = await ai.models.generateContent({
       model: "gemini-3.5-flash-lite",
@@ -194,31 +181,18 @@ PROMPT USER:
 `,
     });
 
-    /*
-     * Ambil teks Gemini.
-     */
-
     const responseText = geminiResponse.text;
 
     if (!responseText) {
       throw new Error(getLocalizedMessage(selectedLanguage, "geminiNoResponse"));
     }
 
-    /*
-     * Bersihkan markdown jika
-     * Gemini masih bandel.
-     */
 
     const cleanText = responseText
       .replace(/^```json\s*/i, "")
       .replace(/^```\s*/i, "")
       .replace(/\s*```$/i, "")
       .trim();
-
-    /*
-     * Ubah hasil Gemini menjadi
-     * object JavaScript.
-     */
 
     const aiResult = JSON.parse(cleanText);
 
@@ -235,15 +209,6 @@ PROMPT USER:
 
     //console.log("AI RESULT:", aiResult);
 
-    /*
-     * Prompt membutuhkan lokasi,
-     * tetapi frontend belum
-     * mengirim koordinat.
-     *
-     * API berhenti di sini agar
-     * frontend menampilkan popup.
-     */
-
     if (aiResult.useUserLocation === true && !userLocation) {
       //console.log("Lokasi belum tersedia.");
 
@@ -253,11 +218,6 @@ PROMPT USER:
         query: aiResult,
       });
     }
-
-    /*
-     * Kalau koordinat sudah ada,
-     * lanjut ke Google Places.
-     */
 
     //console.log("Memanggil Google Places...");
 
@@ -269,10 +229,6 @@ PROMPT USER:
     });
 
     //console.log("JUMLAH TEMPAT:", places.length);
-
-    /*
-     * Kirim hasil ke page.tsx.
-     */
 
     return Response.json({
       requiresLocation: false,

@@ -171,8 +171,6 @@ export default function Home() {
 
       const data = await response.json();
 
-      // Gemini mendeteksi bahwa prompt
-      // membutuhkan lokasi pengguna
       if (data.requiresLocation && !currentLocation) {
         setPendingSearch(true);
         setShowLocationPopup(true);
@@ -186,9 +184,6 @@ export default function Home() {
 
       setPlaces(data.places || []);
 
-      // Gemini bisa menentukan sorting
-      // dari prompt, misalnya:
-      // "coffeeshop terdekat"
       if (data.query?.sortBy) {
         setSortBy(data.query.sortBy);
       }
@@ -204,7 +199,6 @@ export default function Home() {
   function handleAllowLocation() {
     if (!navigator.geolocation) {
       setLocationError(t.browserLocationUnsupported);
-
       return;
     }
 
@@ -215,26 +209,19 @@ export default function Home() {
       (position) => {
         const location = {
           latitude: position.coords.latitude,
-
           longitude: position.coords.longitude,
         };
 
         setUserLocation(location);
-
         setLocationLoading(false);
-
         setShowLocationPopup(false);
 
-        // Jika popup muncul karena
-        // sort "Terdekat dari saya"
         if (pendingDistanceSort) {
           setSortBy("distance");
 
           setPendingDistanceSort(false);
         }
 
-        // Jika popup muncul karena
-        // Gemini mendeteksi "near me"
         if (pendingSearch) {
           setPendingSearch(false);
 
@@ -266,13 +253,9 @@ export default function Home() {
 
   function handleRejectLocation() {
     setShowLocationPopup(false);
-
     setPendingSearch(false);
-
     setPendingDistanceSort(false);
-
     setLocationError("");
-
     setError(t.locationPermissionRequired);
   }
 
@@ -281,10 +264,6 @@ export default function Home() {
     setShowLocationPopup(true);
   }
 
-  // PENTING: hook harus di top-level komponen,
-  // BUKAN di dalam callback .sort() di bawah.
-  // Efek ini memicu popup lokasi begitu user
-  // memilih sort "distance" tapi lokasi belum ada.
   useEffect(() => {
     if (sortBy === "distance" && !userLocation) {
       setPendingDistanceSort(true);
@@ -312,18 +291,12 @@ export default function Home() {
   });
 
   const sortedPlaces = [...filteredPlaces].sort((a, b) => {
-    // Urutan asli Google Places
+    
     if (sortBy === "relevance") {
       return 0;
     }
-
-    // Tempat terdekat dari lokasi pengguna
+    
     if (sortBy === "distance") {
-      // Comparator harus murni: TIDAK BOLEH
-      // ada setState di sini. Kalau lokasi
-      // belum ada, cukup return 0 (urutan
-      // asli) — popup-nya sudah ditangani
-      // oleh useEffect di atas.
       if (!userLocation) {
         return 0;
       }
@@ -363,7 +336,6 @@ export default function Home() {
       return distanceA - distanceB;
     }
 
-    // Harga termurah
     if (sortBy === "price") {
       const getPriceValue = (priceRange?: Place["priceRange"]) => {
         const startPrice = priceRange?.startPrice;
@@ -373,35 +345,25 @@ export default function Home() {
         }
 
         const units = Number(startPrice.units ?? 0);
-
         const nanos = (startPrice.nanos ?? 0) / 1_000_000_000;
-
         return units + nanos;
       };
 
       const priceA = getPriceValue(a.priceRange);
-
       const priceB = getPriceValue(b.priceRange);
-
       return priceA - priceB;
     }
 
-    // Rating tertinggi
     if (sortBy === "rating") {
       const ratingA = a.rating ?? 0;
       const ratingB = b.rating ?? 0;
 
-      // Rating beda
       if (ratingA !== ratingB) {
         return ratingB - ratingA;
       }
 
-      // Rating sama:
-      // jumlah ulasan lebih banyak dulu
       const countA = a.userRatingCount ?? 0;
-
       const countB = b.userRatingCount ?? 0;
-
       return countB - countA;
     }
 

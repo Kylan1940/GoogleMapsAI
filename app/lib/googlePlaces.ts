@@ -67,10 +67,6 @@ export async function searchPlaces({
       ` di ${query.location}`;
   }
 
-  /*
-   * Request ke Google Places API
-   */
-
   const requestBody: Record<string, unknown> = {
     textQuery,
 
@@ -78,14 +74,6 @@ export async function searchPlaces({
 
     maxResultCount: 20,
   };
-
-  /*
-   * Jika user meminta:
-   * "dekat saya"
-   *
-   * Google Places memakai
-   * koordinat user sebagai bias.
-   */
 
   if (
     query.useUserLocation &&
@@ -103,20 +91,11 @@ export async function searchPlaces({
 
         /*
          * Radius 5 km.
-         *
-         * Bisa diganti:
-         * 3000 = 3 km
-         * 5000 = 5 km
-         * 10000 = 10 km
          */
         radius: 5000,
       },
     };
   }
-
-  /*
-   * Filter rating minimum.
-   */
 
   if (
     query.minimumRating
@@ -125,10 +104,6 @@ export async function searchPlaces({
       query.minimumRating;
   }
 
-  /*
-   * Filter hanya tempat yang buka.
-   */
-
   if (
     query.openNow === true
   ) {
@@ -136,9 +111,6 @@ export async function searchPlaces({
   }
 
   /*
-   * Filter harga.
-   *
-   * Google Places memakai:
    * PRICE_LEVEL_INEXPENSIVE
    * PRICE_LEVEL_MODERATE
    * PRICE_LEVEL_EXPENSIVE
@@ -191,31 +163,17 @@ export async function searchPlaces({
         "X-Goog-Api-Key":
           apiKey,
 
-        /*
-         * Field yang dikembalikan
-         * Google Places.
-         */
         "X-Goog-FieldMask": [
           "places.displayName",
-
           "places.formattedAddress",
-
           "places.rating",
-
           "places.userRatingCount",
-
           "places.priceRange",
-
           "places.regularOpeningHours",
-
           "places.location",
-
           "places.googleMapsUri",
-
           "places.nationalPhoneNumber",
-
           "places.internationalPhoneNumber",
-
           "places.websiteUri",
         ].join(","),
       },
@@ -225,11 +183,6 @@ export async function searchPlaces({
       ),
     }
   );
-
-  /*
-   * Jika Google Places error,
-   * tampilkan isi error asli.
-   */
 
   if (!response.ok) {
     const errorText =

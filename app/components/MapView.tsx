@@ -66,7 +66,6 @@ export default function MapView({ places, userLocation, language }: MapViewProps
     return <p>{t.mapsApiKeyMissing}</p>;
   }
 
-  // Key berubah hanya jika hasil pencarian berubah
   const mapKey = validPlaces
     .map((place) => `${place.location!.latitude},${place.location!.longitude}`)
     .join("|");
