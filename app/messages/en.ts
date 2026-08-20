@@ -3,12 +3,6 @@ export default {
   searchPlaceholder: "Example: cheap coffee shop in Semarang",
   searchButton: "Search Places",
   searching: "Searching places...",
-  suggestions: [
-    "Cheap coffee shop",
-    "Best barbershop",
-    "Nearest restaurant",
-    "Instagrammable tourist spot",
-  ],
   heroDescription: "Find the best places using natural language and get Google Maps results instantly.",
   heroQueries: [
     { title: "Coffee Shop near me", location: "Semarang" },

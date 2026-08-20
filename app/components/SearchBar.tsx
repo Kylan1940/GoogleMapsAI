@@ -59,19 +59,6 @@ export default function SearchBar({
           )}
         </button>
       </div>
-
-      <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        {t.suggestions.map((chip) => (
-          <button
-            key={chip}
-            type="button"
-            onClick={() => onPromptChange(chip)}
-            className="shrink-0 rounded-full border border-[#0E4A34]/15 bg-white/70 px-4 py-2 text-sm font-medium text-[#0E4A34] transition-colors duration-200 hover:bg-[#C8E85A]/40"
-          >
-            {chip}
-          </button>
-        ))}
-      </div>
     </section>
   );
 }

@@ -3,12 +3,6 @@ export default {
   searchPlaceholder: "Contoh: coffeeshop murah di Semarang",
   searchButton: "Cari Tempat",
   searching: "Mencari tempat...",
-  suggestions: [
-    "Coffeeshop murah",
-    "Barbershop terbaik",
-    "Restoran terdekat",
-    "Tempat wisata instagramable",
-  ],
   heroDescription: "Temukan tempat terbaik menggunakan bahasa natural dan dapatkan hasil dari Google Maps secara instan.",
   heroQueries: [
     { title: "Coffee Shop terdekat", location: "Semarang" },
